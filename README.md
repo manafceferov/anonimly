@@ -8,7 +8,7 @@ Java və Kotlin ilə yazılmış blog platforması. İstifadəçilər yazı payl
 💬 Şərh yaz, şərhə cavab ver (nested reply)
 👍 Like / Dislike — MangoDB ilə (eyni düyməyə iki dəfə basanda reaksiya silinir)
 📊 Hər post açılanda baxış sayı artır
-📋 Swagger UI ilə API-ləri test et
+📋 Swagger UI ilə API-ləri test etmək
 
 
 🛠 Texnologiyalar
