@@ -17,7 +17,7 @@ Java 21 — Controller, Service, Repository
 Kotlin — Entity və DTO-lar
 Spring Boot 3.5 — əsas framework
 PostgreSQL — məlumat bazası
-Redis — like/dislike
+MangoDB — like/dislike
 Liquibase — database miqrasiyası
 MapStruct — mapper
 JWT + Spring Security — autentifikasiya
