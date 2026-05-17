@@ -6,7 +6,7 @@ Java və Kotlin ilə yazılmış blog platforması. İstifadəçilər yazı payl
 🔐 Qeydiyyat və giriş — JWT token ilə
 📝 Yazı yarat, redaktə et, sil
 💬 Şərh yaz, şərhə cavab ver (nested reply)
-👍 Like / Dislike — Redis ilə (eyni düyməyə iki dəfə basanda reaksiya silinir)
+👍 Like / Dislike — MangoDB ilə (eyni düyməyə iki dəfə basanda reaksiya silinir)
 📊 Hər post açılanda baxış sayı artır
 📋 Swagger UI ilə API-ləri test et
 
