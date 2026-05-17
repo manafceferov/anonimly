@@ -22,8 +22,7 @@ public class UserService {
 
     public UserService(UserRepository userRepository,
                        UserMapper userMapper,
-                       PasswordEncoder passwordEncoder
-    ) {
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
@@ -31,12 +30,10 @@ public class UserService {
 
     @Transactional
     public UserResponseDto register(UserRegisterDto dto) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
+        if (userRepository.existsByEmail(dto.getEmail()))
             throw new AlreadyExistsException("Bu email artıq mövcuddur");
-        }
-        if (userRepository.existsByUsername(dto.getUsername())) {
+        if (userRepository.existsByUsername(dto.getUsername()))
             throw new AlreadyExistsException("Bu username artıq mövcuddur");
-        }
 
         User user = new User();
         user.setUsername(dto.getUsername());
@@ -47,22 +44,16 @@ public class UserService {
     }
 
     public UserResponseDto getById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
-        return userMapper.toResponseDto(user);
+        return userMapper.toResponseDto(findById(id));
     }
 
     public UserResponseDto getByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
-        return userMapper.toResponseDto(user);
+        return userMapper.toResponseDto(findByUsername(username));
     }
 
     @Transactional
     public UserResponseDto edit(Long id, UserEditDto dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
-
+        User user = findById(id);
         if (dto.getUsername() != null) user.setUsername(dto.getUsername());
         if (dto.getBio() != null) user.setBio(dto.getBio());
         if (dto.getAvatarUrl() != null) user.setAvatarUrl(dto.getAvatarUrl());
@@ -71,9 +62,24 @@ public class UserService {
 
     @Transactional
     public void delete(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
+        User user = findById(id);
         user.setDeleted(true);
         userRepository.save(user);
+    }
+
+    // Entity qaytaran metodlar — digər service-lər üçün
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
+    }
+
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));
     }
 }

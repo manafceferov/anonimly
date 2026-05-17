@@ -6,15 +6,17 @@ import com.anonimly.dto.post.PostEditDto;
 import com.anonimly.dto.post.PostResponseDto;
 import com.anonimly.entity.Post;
 import com.anonimly.entity.User;
+import com.anonimly.service.UserService;
+import com.anonimly.exception.ForbiddenException;
+import com.anonimly.exception.ResourceNotFoundException;
 import com.anonimly.mapper.PostMapper;
 import com.anonimly.repository.CommentRepository;
 import com.anonimly.repository.PostRepository;
-import com.anonimly.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.text.Normalizer;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -23,28 +25,24 @@ import java.util.regex.Pattern;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final CommentRepository commentRepository;
     private final PostMapper postMapper;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final LikeService likeService;
 
-    public PostService(PostRepository postRepository,
-                       UserRepository userRepository,
-                       CommentRepository commentRepository,
-                       PostMapper postMapper,
-                       RedisTemplate<String, String> redisTemplate
-    ) {
+    public PostService(PostRepository postRepository, UserService userService,
+                       CommentRepository commentRepository, PostMapper postMapper,
+                       LikeService likeService) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.commentRepository = commentRepository;
         this.postMapper = postMapper;
-        this.redisTemplate = redisTemplate;
+        this.likeService = likeService;
     }
 
     @Transactional
     public PostResponseDto create(PostCreateDto dto, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("İstifadəçi tapılmadı"));
+        User user = userService.findById(userId);
 
         Post post = new Post();
         post.setTitle(dto.getTitle());
@@ -55,7 +53,7 @@ public class PostService {
         post.setUser(user);
 
         PostResponseDto response = postMapper.toResponseDto(postRepository.save(post));
-        enrichWithRedisData(response);
+        enrichWithLikes(response);
         return response;
     }
 
@@ -64,30 +62,27 @@ public class PostService {
                 .map(post -> {
                     PostResponseDto dto = postMapper.toResponseDto(post);
                     dto.setCommentCount(commentRepository.countByPostIdAndDeletedFalse(post.getId()));
-                    enrichWithRedisData(dto);
+                    enrichWithLikes(dto);
                     return dto;
                 });
     }
 
+    @Transactional
     public PostDetailResponseDto getBySlug(String slug) {
         Post post = postRepository.findBySlugAndDeletedFalse(slug)
-                .orElseThrow(() -> new RuntimeException("Post tapılmadı"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Post tapılmadı"));
         post.setViewCount(post.getViewCount() + 1);
         postRepository.save(post);
         PostDetailResponseDto dto = postMapper.toDetailResponseDto(post);
-        enrichDetailWithRedisData(dto);
+        enrichDetailWithLikes(dto);
         return dto;
     }
 
     @Transactional
     public PostResponseDto edit(Long id, PostEditDto dto, Long userId) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post tapılmadı"));
-
-        if (!post.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Bu əməliyyat üçün icazəniz yoxdur");
-        }
+        Post post = findById(id);
+        if (!post.getUser().getId().equals(userId))
+            throw new ForbiddenException("Bu əməliyyat üçün icazəniz yoxdur");
 
         if (dto.getTitle() != null) {
             post.setTitle(dto.getTitle());
@@ -98,38 +93,32 @@ public class PostService {
         if (dto.getPublished() != null) post.setPublished(dto.getPublished());
 
         PostResponseDto response = postMapper.toResponseDto(postRepository.save(post));
-        enrichWithRedisData(response);
+        enrichWithLikes(response);
         return response;
     }
 
     @Transactional
     public void delete(Long id, Long userId) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post tapılmadı"));
-
-        if (!post.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Bu əməliyyat üçün icazəniz yoxdur");
-        }
+        Post post = findById(id);
+        if (!post.getUser().getId().equals(userId))
+            throw new ForbiddenException("Bu əməliyyat üçün icazəniz yoxdur");
         post.setDeleted(true);
         postRepository.save(post);
     }
 
-    private void enrichWithRedisData(PostResponseDto dto) {
-        String likeKey = "post:" + dto.getId() + ":likes";
-        String dislikeKey = "post:" + dto.getId() + ":dislikes";
-        String likeVal = redisTemplate.opsForValue().get(likeKey);
-        String dislikeVal = redisTemplate.opsForValue().get(dislikeKey);
-        dto.setLikeCount(likeVal != null ? Long.parseLong(likeVal) : 0L);
-        dto.setDislikeCount(dislikeVal != null ? Long.parseLong(dislikeVal) : 0L);
+    public Post findById(Long id) {
+        return postRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Post tapılmadı"));
     }
 
-    private void enrichDetailWithRedisData(PostDetailResponseDto dto) {
-        String likeKey = "post:" + dto.getId() + ":likes";
-        String dislikeKey = "post:" + dto.getId() + ":dislikes";
-        String likeVal = redisTemplate.opsForValue().get(likeKey);
-        String dislikeVal = redisTemplate.opsForValue().get(dislikeKey);
-        dto.setLikeCount(likeVal != null ? Long.parseLong(likeVal) : 0L);
-        dto.setDislikeCount(dislikeVal != null ? Long.parseLong(dislikeVal) : 0L);
+    private void enrichWithLikes(PostResponseDto dto) {
+        dto.setLikeCount(likeService.getLikeCount(dto.getId()));
+        dto.setDislikeCount(likeService.getDislikeCount(dto.getId()));
+    }
+
+    private void enrichDetailWithLikes(PostDetailResponseDto dto) {
+        dto.setLikeCount(likeService.getLikeCount(dto.getId()));
+        dto.setDislikeCount(likeService.getDislikeCount(dto.getId()));
     }
 
     private String generateSlug(String title) {
