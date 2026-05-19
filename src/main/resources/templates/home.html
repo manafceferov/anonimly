@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Ana səhifə')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h4 class="mb-4 fw-bold">Son yazılar</h4>
+
+            <div th:if="${#lists.isEmpty(posts)}" class="text-center text-muted py-5">
+                <i class="bi bi-journal-x fs-1"></i>
+                <p class="mt-3">Hələ heç bir yazı yoxdur.</p>
+            </div>
+
+            <div th:each="post : ${posts}" class="card mb-4 p-4">
+                <div>
+                    <h5 class="mb-1">
+                        <a th:href="@{/web/posts/{slug}(slug=${post.slug})}"
+                           th:text="${post.title}"
+                           class="text-decoration-none text-dark fw-bold"></a>
+                    </h5>
+                    <small class="text-muted">
+                        <i class="bi bi-person"></i>
+                        <span th:text="${post.authorUsername}"></span>
+                        &nbsp;·&nbsp;
+                        <i class="bi bi-clock"></i>
+                        <span th:text="${post.createdAt}"></span>
+                    </small>
+                </div>
+                <div class="mt-3 d-flex gap-3 text-muted small">
+                    <span><i class="bi bi-eye"></i> <span th:text="${post.viewCount}">0</span></span>
+                    <span><i class="bi bi-hand-thumbs-up"></i> <span th:text="${post.likeCount}">0</span></span>
+                    <span><i class="bi bi-hand-thumbs-down"></i> <span th:text="${post.dislikeCount}">0</span></span>
+                    <span><i class="bi bi-chat"></i> <span th:text="${post.commentCount}">0</span></span>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <nav>
+                    <ul class="pagination">
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                            <a class="page-link" th:href="@{/?page={p}(p=${currentPage - 1})}">Əvvəlki</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                            th:classappend="${i == currentPage} ? 'active'">
+                            <a class="page-link" th:href="@{/?page={p}(p=${i})}" th:text="${i + 1}"></a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                            <a class="page-link" th:href="@{/?page={p}(p=${currentPage + 1})}">Növbəti</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<div th:replace="~{fragments/footer :: scripts}"></div>
+</body>
+</html>

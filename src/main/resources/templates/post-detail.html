@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(${post.title})}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+
+            <!-- Post -->
+            <div class="card p-4 mb-4">
+                <h2 class="fw-bold mb-2" th:text="${post.title}"></h2>
+                <div class="text-muted small mb-4">
+                    <i class="bi bi-person"></i> <span th:text="${post.authorUsername}"></span>
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-clock"></i> <span th:text="${post.createdAt}"></span>
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-eye"></i> <span th:text="${post.viewCount}"></span> baxış
+                </div>
+                <div th:text="${post.content}" class="lh-lg"></div>
+
+                <!-- Like/Dislike -->
+                <div class="mt-4 d-flex gap-3">
+                    <a th:href="@{/web/posts/{slug}/like(slug=${post.slug})}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-hand-thumbs-up"></i> <span th:text="${post.likeCount}">0</span>
+                    </a>
+                    <a th:href="@{/web/posts/{slug}/dislike(slug=${post.slug})}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-hand-thumbs-down"></i> <span th:text="${post.dislikeCount}">0</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Comments -->
+            <div class="card p-4 mb-4">
+                <h5 class="fw-bold mb-4">Şərhlər</h5>
+
+                <div th:if="${#lists.isEmpty(comments)}" class="text-muted">
+                    Hələ şərh yoxdur. İlk şərhi sən yaz!
+                </div>
+
+                <div th:each="comment : ${comments}" class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <strong th:text="${comment.authorUsername}"></strong>
+                        <small class="text-muted" th:text="${comment.createdAt}"></small>
+                    </div>
+                    <p class="mb-0 mt-1" th:text="${comment.content}"></p>
+                </div>
+
+                <!-- Comment form -->
+                <form th:action="@{/web/posts/{slug}/comment(slug=${post.slug})}" method="post" class="mt-4">
+                    <div class="mb-3">
+                        <textarea name="content" class="form-control" rows="3" placeholder="Şərhinizi yazın..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Göndər</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<div th:replace="~{fragments/footer :: scripts}"></div>
+</body>
+</html>

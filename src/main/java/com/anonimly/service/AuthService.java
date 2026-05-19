@@ -42,10 +42,15 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getUsername());
 
+        // Obyekti doldururuq
         LoginResponseDto response = new LoginResponseDto();
         response.setToken(token);
         response.setUsername(user.getUsername());
         response.setRole(user.getRole().name());
+
+        // BAX BU SƏTİR PROBLEMİ BİRDƏFƏLİK HƏLL EDİR:
+        response.setUserId(user.getId());
+
         return response;
     }
 }
