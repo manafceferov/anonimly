@@ -1,17 +1,17 @@
-✍️ Anonimly — Blog Platform
+Anonimly — Blog Platform
 Java və Kotlin ilə yazılmış blog platforması. İstifadəçilər yazı paylaşa, şərh yaza, like/dislike edə bilər.
 
-🚀 Funksionallıq
+Funksionallıq
 
-🔐 Qeydiyyat və giriş — JWT token ilə
-📝 Yazı yarat, redaktə et, sil
-💬 Şərh yaz, şərhə cavab ver (nested reply)
-👍 Like / Dislike — MangoDB ilə (eyni düyməyə iki dəfə basanda reaksiya silinir)
-📊 Hər post açılanda baxış sayı artır
-📋 Swagger UI ilə API-ləri test etmək
+Qeydiyyat və giriş — JWT token ilə
+Yazı yarat, redaktə et, sil
+Şərh yaz, şərhə cavab ver (nested reply)
+Like / Dislike — MangoDB ilə (eyni düyməyə iki dəfə basanda reaksiya silinir)
+Hər post açılanda baxış sayı artır
+Swagger UI ilə API-ləri test etmək
 
 
-🛠 Texnologiyalar
+Texnologiyalar
 
 Java 21 — Controller, Service, Repository
 Kotlin — Entity və DTO-lar
