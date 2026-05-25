@@ -13,4 +13,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Optional<Post> findBySlugAndDeletedFalse(String slug);
     Page<Post> findAllByPublishedTrueAndDeletedFalse(Pageable pageable);
     Page<Post> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
+    Page<Post> findAllByTitleContainingIgnoreCaseAndPublishedTrueAndDeletedFalse(String title, Pageable pageable);
 }

@@ -3,21 +3,20 @@ package com.anonimly.controller;
 import com.anonimly.dto.auth.LoginRequestDto;
 import com.anonimly.dto.auth.LoginResponseDto;
 import com.anonimly.dto.comment.CommentCreateDto;
+import com.anonimly.dto.comment.CommentEditDto;
 import com.anonimly.dto.comment.CommentResponseDto;
 import com.anonimly.dto.post.PostCreateDto;
 import com.anonimly.dto.post.PostDetailResponseDto;
+import com.anonimly.dto.post.PostEditDto;
 import com.anonimly.dto.post.PostResponseDto;
 import com.anonimly.dto.user.UserEditDto;
 import com.anonimly.dto.user.UserRegisterDto;
 import com.anonimly.dto.user.UserResponseDto;
-import com.anonimly.service.AuthService;
-import com.anonimly.service.CommentService;
-import com.anonimly.service.LikeService;
-import com.anonimly.service.PostService;
-import com.anonimly.service.UserService;
+import com.anonimly.service.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -32,30 +31,56 @@ public class MvcController {
     private final UserService userService;
     private final CommentService commentService;
     private final LikeService likeService;
+    private final CommentLikeService commentLikeService;
 
     public MvcController(PostService postService,
                          AuthService authService,
                          UserService userService,
                          CommentService commentService,
-                         LikeService likeService) {
+                         LikeService likeService,
+                         CommentLikeService commentLikeService
+    ) {
         this.postService = postService;
         this.authService = authService;
         this.userService = userService;
         this.commentService = commentService;
         this.likeService = likeService;
+        this.commentLikeService = commentLikeService;
     }
 
     @GetMapping("/")
-    public String home(@RequestParam(defaultValue = "0") int page, Model model) {
-        Page<PostResponseDto> posts = postService.getAll(PageRequest.of(page, 10));
+    public String home(@RequestParam(defaultValue = "0") int page,
+                       @RequestParam(required = false) String search,
+                       Model model
+    ) {
+
+        PageRequest pageRequest = PageRequest.of(
+                page,
+                10,
+                Sort.by(Sort.Direction.DESC, "createdAt", "id")
+        );
+
+        Page<PostResponseDto> posts;
+
+        if (search != null && !search.isBlank()) {
+            posts = postService.search(search, pageRequest);
+            model.addAttribute("search", search);
+        } else {
+            posts = postService.getAll(pageRequest);
+        }
+
         model.addAttribute("posts", posts.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", posts.getTotalPages());
+
         return "home";
     }
 
     @GetMapping("/web/posts/{slug}")
-    public String postDetail(@PathVariable String slug, Model model, HttpSession session) {
+    public String postDetail(@PathVariable String slug,
+                             Model model,
+                             HttpSession session
+    ) {
         PostDetailResponseDto post = postService.getBySlug(slug);
         model.addAttribute("post", post);
         model.addAttribute("comments", commentService.getByPost(post.getId(), PageRequest.of(0, 20)).getContent());
@@ -73,7 +98,8 @@ public class MvcController {
     public String createPost(@RequestParam String title,
                              @RequestParam String content,
                              @RequestParam(defaultValue = "true") boolean published,
-                             HttpSession session) {
+                             HttpSession session
+    ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
 
@@ -85,8 +111,26 @@ public class MvcController {
         return "redirect:/web/posts/" + post.getSlug();
     }
 
+    @PostMapping("/web/posts/{slug}/edit")
+    public String editPost(@PathVariable String slug,
+                           @RequestParam String title,
+                           HttpSession session
+    ) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return "redirect:/login";
+        }
+        PostDetailResponseDto post = postService.getBySlug(slug);
+        PostEditDto dto = new PostEditDto();
+        dto.setTitle(title);
+        postService.edit(post.getId(), dto, userId);
+        return "redirect:/web/profile";
+    }
+
     @PostMapping("/web/posts/{slug}/delete")
-    public String deletePost(@PathVariable String slug, HttpSession session) {
+    public String deletePost(@PathVariable String slug,
+                             HttpSession session
+    ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
         PostDetailResponseDto post = postService.getBySlug(slug);
@@ -95,27 +139,43 @@ public class MvcController {
     }
 
     @GetMapping("/web/posts/{slug}/like")
-    public String like(@PathVariable String slug, HttpSession session) {
+    @ResponseBody
+    public String like(@PathVariable String slug,
+                       HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) return "redirect:/login";
+        if (userId == null) return "LOGIN";
         PostDetailResponseDto post = postService.getBySlug(slug);
         likeService.like(post.getId(), userId);
-        return "redirect:/web/posts/" + slug;
+        return "OK";
     }
 
     @GetMapping("/web/posts/{slug}/dislike")
-    public String dislike(@PathVariable String slug, HttpSession session) {
+    @ResponseBody
+    public String dislike(@PathVariable String slug,
+                          HttpSession session) {
+
         Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) return "redirect:/login";
+        if (userId == null) return "LOGIN";
+
         PostDetailResponseDto post = postService.getBySlug(slug);
         likeService.dislike(post.getId(), userId);
-        return "redirect:/web/posts/" + slug;
+
+        return "OK";
+    }
+
+    @PostMapping("/web/comments/{id}/like")
+    @ResponseBody
+    public String likeComment(@PathVariable Long id, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "LOGIN";
+        return commentLikeService.like(id, userId);
     }
 
     @PostMapping("/web/posts/{slug}/comment")
     public String comment(@PathVariable String slug,
                           @RequestParam String content,
-                          HttpSession session) {
+                          HttpSession session
+    ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
         PostDetailResponseDto post = postService.getBySlug(slug);
@@ -126,15 +186,30 @@ public class MvcController {
         return "redirect:/web/posts/" + slug;
     }
 
+    @PostMapping("/web/comments/{id}/edit")
+    public String editComment(@PathVariable Long id,
+                              @RequestParam String content,
+                              HttpSession session
+    ) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return "redirect:/login";
+        }
+        CommentEditDto dto = new CommentEditDto();
+        dto.setContent(content);
+        commentService.edit(id, dto, userId);
+        return "redirect:/web/profile";
+    }
+
     @GetMapping("/web/profile")
-    public String profile(HttpSession session, Model model) {
+    public String profile(HttpSession session,
+                          Model model
+    ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
-
         UserResponseDto user = userService.getById(userId);
         List<PostResponseDto> posts = postService.getByUserId(userId, PageRequest.of(0, 20)).getContent();
         List<CommentResponseDto> comments = commentService.getByUserId(userId, PageRequest.of(0, 20)).getContent();
-
         model.addAttribute("user", user);
         model.addAttribute("posts", posts);
         model.addAttribute("comments", comments);
@@ -145,7 +220,8 @@ public class MvcController {
     public String editProfile(@RequestParam(required = false) String username,
                               @RequestParam(required = false) String bio,
                               @RequestParam(required = false) String avatarUrl,
-                              HttpSession session) {
+                              HttpSession session
+    ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
 
@@ -170,7 +246,8 @@ public class MvcController {
     public String login(@RequestParam String username,
                         @RequestParam String password,
                         HttpSession session,
-                        Model model) {
+                        Model model
+    ) {
         try {
             LoginRequestDto dto = new LoginRequestDto();
             dto.setUsername(username);
@@ -195,7 +272,8 @@ public class MvcController {
     public String register(@RequestParam String username,
                            @RequestParam String email,
                            @RequestParam String password,
-                           Model model) {
+                           Model model
+    ) {
         try {
             UserRegisterDto dto = new UserRegisterDto();
             dto.setUsername(username);

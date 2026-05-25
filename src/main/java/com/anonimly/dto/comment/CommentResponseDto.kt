@@ -8,5 +8,7 @@ open class CommentResponseDto @JvmOverloads constructor(
     open var postSlug: String? = null,
     open var parentId: Long? = null,
     open var replyCount: Int? = null,
-    open var createdAt: String? = null
+    open var createdAt: String? = null,
+    open var likeCount: Long? = null
+
 )

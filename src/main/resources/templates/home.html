@@ -1,60 +1,174 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head('Ana səhifə')}"></head>
+
 <body>
 <nav th:replace="~{fragments/header :: navbar}"></nav>
 
 <div class="container">
     <div class="row">
         <div class="col-lg-8 mx-auto">
-            <h4 class="mb-4 fw-bold">Son yazılar</h4>
+
+            <!-- SEARCH -->
+            <div class="card p-3 mb-4">
+                <form method="get" action="/" class="d-flex gap-2">
+
+                    <div class="flex-grow-1 position-relative">
+                        <i class="bi bi-search position-absolute"
+                           style="left:15px; top:50%; transform:translateY(-50%); color:#6c757d;"></i>
+
+                        <input type="text"
+                               name="search"
+                               class="form-control ps-5"
+                               placeholder="Post axtar..."
+                               th:value="${search}">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Axtar</button>
+
+                    <a href="/" class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                       style="width:45px;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+
+                </form>
+            </div>
+
+            <!-- EMPTY -->
             <div th:if="${#lists.isEmpty(posts)}" class="text-center text-muted py-5">
                 <i class="bi bi-journal-x fs-1"></i>
-                <p class="mt-3">Hələ heç bir yazı yoxdur.</p>
+                <p class="mt-3">Post tapılmadı.</p>
             </div>
+
+            <!-- POSTS -->
             <div th:each="post : ${posts}" class="card mb-4 p-4">
+
+                <!-- TITLE -->
                 <div>
                     <h5 class="mb-1">
                         <a th:href="@{/web/posts/{slug}(slug=${post.slug})}"
                            th:text="${post.title}"
                            class="text-decoration-none text-dark fw-bold"></a>
                     </h5>
+
                     <small class="text-muted">
                         <i class="bi bi-person"></i>
                         <span th:text="${post.authorUsername}"></span>
+
                         &nbsp;·&nbsp;
+
                         <i class="bi bi-clock"></i>
                         <span th:text="${post.createdAt}"></span>
                     </small>
                 </div>
-                <div class="mt-3 d-flex gap-3 text-muted small">
-                    <span><i class="bi bi-eye"></i> <span th:text="${post.viewCount}">0</span></span>
-                    <span><i class="bi bi-hand-thumbs-up"></i> <span th:text="${post.likeCount}">0</span></span>
-                    <span><i class="bi bi-hand-thumbs-down"></i> <span th:text="${post.dislikeCount}">0</span></span>
-                    <span><i class="bi bi-chat"></i> <span th:text="${post.commentCount}">0</span></span>
+
+                <!-- ACTIONS -->
+                <div class="mt-3 d-flex gap-4 text-muted small align-items-center">
+
+                    <!-- VIEWS -->
+                    <span class="d-flex align-items-center gap-1">
+                        <i class="bi bi-eye"></i>
+                        <span th:text="${post.viewCount}">0</span>
+                    </span>
+
+                    <!-- LIKE -->
+                    <button type="button"
+                            class="btn btn-link text-muted p-0 d-flex align-items-center gap-1"
+                            th:attr="data-slug=${post.slug}"
+                            onclick="react(this,'like')">
+
+                        <i class="bi bi-hand-thumbs-up"></i>
+                        <span th:text="${post.likeCount}">0</span>
+                    </button>
+
+                    <!-- DISLIKE -->
+                    <button type="button"
+                            class="btn btn-link text-muted p-0 d-flex align-items-center gap-1"
+                            th:attr="data-slug=${post.slug}"
+                            onclick="react(this,'dislike')">
+
+                        <i class="bi bi-hand-thumbs-down"></i>
+                        <span th:text="${post.dislikeCount}">0</span>
+                    </button>
+
+                    <!-- COMMENT -->
+                    <a th:href="@{|/web/posts/${post.slug}#comments|}"
+                       class="text-decoration-none text-muted d-flex align-items-center gap-1">
+
+                        <i class="bi bi-chat"></i>
+                        <span th:text="${post.commentCount}">0</span>
+                    </a>
+
                 </div>
             </div>
+
+            <!-- PAGINATION -->
             <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
                 <nav>
                     <ul class="pagination">
+
                         <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                            <a class="page-link" th:href="@{/?page={p}(p=${currentPage - 1})}">Əvvəlki</a>
+                            <a class="page-link"
+                               th:href="@{/(page=${currentPage - 1}, search=${search})}">
+                                Əvvəlki
+                            </a>
                         </li>
-                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+
+                        <li class="page-item"
+                            th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                             th:classappend="${i == currentPage} ? 'active'">
-                            <a class="page-link" th:href="@{/?page={p}(p=${i})}" th:text="${i + 1}"></a>
+
+                            <a class="page-link"
+                               th:href="@{/(page=${i}, search=${search})}"
+                               th:text="${i + 1}">
+                            </a>
                         </li>
-                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                            <a class="page-link" th:href="@{/?page={p}(p=${currentPage + 1})}">Növbəti</a>
+
+                        <li class="page-item"
+                            th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+
+                            <a class="page-link"
+                               th:href="@{/(page=${currentPage + 1}, search=${search})}">
+                                Növbəti
+                            </a>
                         </li>
+
                     </ul>
                 </nav>
             </div>
+
         </div>
     </div>
 </div>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 <div th:replace="~{fragments/footer :: scripts}"></div>
+
+<!-- JS -->
+<script>
+    async function react(el, type) {
+        const slug = el.getAttribute("data-slug");
+
+        const url = type === 'like'
+            ? `/web/posts/${slug}/like`
+            : `/web/posts/${slug}/dislike`;
+
+        try {
+            const res = await fetch(url);
+            const text = await res.text();
+
+            if (text === "LOGIN") {
+                window.location.href = "/login";
+                return;
+            }
+
+            location.reload();
+
+        } catch (e) {
+            console.log(e);
+        }
+    }
+</script>
+
 </body>
 </html>

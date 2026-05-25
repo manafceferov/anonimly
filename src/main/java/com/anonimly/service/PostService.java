@@ -117,6 +117,17 @@ public class PostService {
         postRepository.save(post);
     }
 
+    public Page<PostResponseDto> search(String keyword, Pageable pageable) {
+        return postRepository
+                .findAllByTitleContainingIgnoreCaseAndPublishedTrueAndDeletedFalse(keyword, pageable)
+                .map(post -> {
+                    PostResponseDto dto = postMapper.toResponseDto(post);
+                    dto.setCommentCount(commentRepository.countByPostIdAndDeletedFalse(post.getId()));
+                    enrichWithLikes(dto);
+                    return dto;
+                });
+    }
+
     public Post findById(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Post tapılmadı"));
