@@ -10,6 +10,7 @@ public interface CommentMapper {
 
     @Mapping(target = "authorUsername", source = "user.username")
     @Mapping(target = "postId", source = "post.id")
+    @Mapping(target = "postSlug", source = "post.slug")
     @Mapping(target = "parentId", source = "parent.id")
     @Mapping(target = "replyCount", expression = "java(comment.getReplies().size())")
     @Mapping(target = "createdAt", expression = "java(comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : null)")

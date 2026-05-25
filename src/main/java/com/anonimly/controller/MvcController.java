@@ -3,10 +3,13 @@ package com.anonimly.controller;
 import com.anonimly.dto.auth.LoginRequestDto;
 import com.anonimly.dto.auth.LoginResponseDto;
 import com.anonimly.dto.comment.CommentCreateDto;
+import com.anonimly.dto.comment.CommentResponseDto;
 import com.anonimly.dto.post.PostCreateDto;
 import com.anonimly.dto.post.PostDetailResponseDto;
 import com.anonimly.dto.post.PostResponseDto;
+import com.anonimly.dto.user.UserEditDto;
 import com.anonimly.dto.user.UserRegisterDto;
+import com.anonimly.dto.user.UserResponseDto;
 import com.anonimly.service.AuthService;
 import com.anonimly.service.CommentService;
 import com.anonimly.service.LikeService;
@@ -18,6 +21,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 public class MvcController {
@@ -32,8 +37,7 @@ public class MvcController {
                          AuthService authService,
                          UserService userService,
                          CommentService commentService,
-                         LikeService likeService
-    ) {
+                         LikeService likeService) {
         this.postService = postService;
         this.authService = authService;
         this.userService = userService;
@@ -61,12 +65,7 @@ public class MvcController {
 
     @GetMapping("/web/posts/new")
     public String newPostPage(HttpSession session) {
-        System.out.println("==> /web/posts/new səhifəsinə giriş cəhdi!");
-        System.out.println("==> Mövcud Session daxilindəki UserId: " + session.getAttribute("userId"));
-        if (session.getAttribute("userId") == null) {
-            System.out.println("==> UserId NULL-dur! Logine yönləndirilir...");
-            return "redirect:/login";
-        }
+        if (session.getAttribute("userId") == null) return "redirect:/login";
         return "post-new";
     }
 
@@ -84,6 +83,15 @@ public class MvcController {
         dto.setPublished(published);
         var post = postService.create(dto, userId);
         return "redirect:/web/posts/" + post.getSlug();
+    }
+
+    @PostMapping("/web/posts/{slug}/delete")
+    public String deletePost(@PathVariable String slug, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "redirect:/login";
+        PostDetailResponseDto post = postService.getBySlug(slug);
+        postService.delete(post.getId(), userId);
+        return "redirect:/web/profile";
     }
 
     @GetMapping("/web/posts/{slug}/like")
@@ -118,6 +126,41 @@ public class MvcController {
         return "redirect:/web/posts/" + slug;
     }
 
+    @GetMapping("/web/profile")
+    public String profile(HttpSession session, Model model) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "redirect:/login";
+
+        UserResponseDto user = userService.getById(userId);
+        List<PostResponseDto> posts = postService.getByUserId(userId, PageRequest.of(0, 20)).getContent();
+        List<CommentResponseDto> comments = commentService.getByUserId(userId, PageRequest.of(0, 20)).getContent();
+
+        model.addAttribute("user", user);
+        model.addAttribute("posts", posts);
+        model.addAttribute("comments", comments);
+        return "profile";
+    }
+
+    @PostMapping("/web/profile/edit")
+    public String editProfile(@RequestParam(required = false) String username,
+                              @RequestParam(required = false) String bio,
+                              @RequestParam(required = false) String avatarUrl,
+                              HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "redirect:/login";
+
+        try {
+            UserEditDto dto = new UserEditDto();
+            dto.setUsername(username);
+            dto.setBio(bio);
+            dto.setAvatarUrl(avatarUrl);
+            UserResponseDto updated = userService.edit(userId, dto);
+            session.setAttribute("username", updated.getUsername());
+        } catch (Exception e) {
+        }
+        return "redirect:/web/profile";
+    }
+
     @GetMapping("/login")
     public String loginPage() {
         return "login";
@@ -129,19 +172,15 @@ public class MvcController {
                         HttpSession session,
                         Model model) {
         try {
-            System.out.println("==> Loqin istəyi gəldi: " + username);
             LoginRequestDto dto = new LoginRequestDto();
             dto.setUsername(username);
             dto.setPassword(password);
             LoginResponseDto response = authService.login(dto);
-            System.out.println("==> Service-dən gələn UserId: " + response.getUserId());
             session.setAttribute("userId", response.getUserId());
             session.setAttribute("username", response.getUsername());
             session.setAttribute("token", response.getToken());
-            System.out.println("==> Session-a yazılan UserId: " + session.getAttribute("userId"));
             return "redirect:/";
         } catch (Exception e) {
-            System.out.println("==> Loqin xətası: " + e.getMessage());
             model.addAttribute("error", "İstifadəçi adı və ya şifrə yanlışdır");
             return "login";
         }
@@ -156,8 +195,7 @@ public class MvcController {
     public String register(@RequestParam String username,
                            @RequestParam String email,
                            @RequestParam String password,
-                           Model model
-    ) {
+                           Model model) {
         try {
             UserRegisterDto dto = new UserRegisterDto();
             dto.setUsername(username);

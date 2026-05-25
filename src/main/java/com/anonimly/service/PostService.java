@@ -6,7 +6,6 @@ import com.anonimly.dto.post.PostEditDto;
 import com.anonimly.dto.post.PostResponseDto;
 import com.anonimly.entity.Post;
 import com.anonimly.entity.User;
-import com.anonimly.service.UserService;
 import com.anonimly.exception.ForbiddenException;
 import com.anonimly.exception.ResourceNotFoundException;
 import com.anonimly.mapper.PostMapper;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.text.Normalizer;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -30,9 +28,12 @@ public class PostService {
     private final PostMapper postMapper;
     private final LikeService likeService;
 
-    public PostService(PostRepository postRepository, UserService userService,
-                       CommentRepository commentRepository, PostMapper postMapper,
-                       LikeService likeService) {
+    public PostService(PostRepository postRepository,
+                       UserService userService,
+                       CommentRepository commentRepository,
+                       PostMapper postMapper,
+                       LikeService likeService
+    ) {
         this.postRepository = postRepository;
         this.userService = userService;
         this.commentRepository = commentRepository;
@@ -95,6 +96,16 @@ public class PostService {
         PostResponseDto response = postMapper.toResponseDto(postRepository.save(post));
         enrichWithLikes(response);
         return response;
+    }
+
+    public Page<PostResponseDto> getByUserId(Long userId, Pageable pageable) {
+        return postRepository.findAllByUserIdAndDeletedFalse(userId, pageable)
+                .map(post -> {
+                    PostResponseDto dto = postMapper.toResponseDto(post);
+                    dto.setCommentCount(commentRepository.countByPostIdAndDeletedFalse(post.getId()));
+                    enrichWithLikes(dto);
+                    return dto;
+                });
     }
 
     @Transactional

@@ -24,6 +24,11 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/anonimly
 
+  security:
+    user:
+      name: admin
+      password: admin
+
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 86400000
@@ -38,3 +43,10 @@ springdoc:
     path: /v3/api-docs
   default-produces-media-type: application/json
   pageable-parameter-strategy: standard
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.orm.connections.pooling: OFF
+    org.hibernate.orm.deprecation: OFF
+    org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration: OFF

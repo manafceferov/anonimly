@@ -22,7 +22,8 @@ public class UserService {
 
     public UserService(UserRepository userRepository,
                        UserMapper userMapper,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
@@ -67,7 +68,6 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // Entity qaytaran metodlar — digər service-lər üçün
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("İstifadəçi tapılmadı"));

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Profilim')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card p-4 text-center">
+                <div class="mb-3">
+                    <img th:if="${user.avatarUrl != null}"
+                         th:src="${user.avatarUrl}"
+                         class="rounded-circle"
+                         style="width:90px;height:90px;object-fit:cover;"
+                         alt="avatar">
+                    <div th:if="${user.avatarUrl == null}"
+                         class="rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width:90px;height:90px;background:#e94560;font-size:2rem;color:#fff;">
+                        <span th:text="${#strings.substring(user.username, 0, 1).toUpperCase()}"></span>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-1" th:text="${user.username}"></h5>
+                <p class="text-muted small mb-1" th:text="${user.email}"></p>
+                <p class="text-muted small mb-3" th:text="${user.bio != null ? user.bio : 'Bio əlavə edilməyib'}"></p>
+                <span class="badge bg-secondary" th:text="${user.role}"></span>
+            </div>
+            <div class="card p-4 mt-3">
+                <h6 class="fw-bold mb-3">Məlumatları dəyiş</h6>
+                <div th:if="${error}" class="alert alert-danger small" th:text="${error}"></div>
+                <form th:action="@{/web/profile/edit}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label small">İstifadəçi adı</label>
+                        <input type="text" name="username" class="form-control form-control-sm"
+                               th:value="${user.username}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Bio</label>
+                        <textarea name="bio" class="form-control form-control-sm" rows="3"
+                                  th:text="${user.bio}"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Avatar URL</label>
+                        <input type="text" name="avatarUrl" class="form-control form-control-sm"
+                               th:value="${user.avatarUrl}" placeholder="https://...">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Yadda saxla</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <ul class="nav nav-tabs mb-3" id="profileTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#posts-tab">
+                        <i class="bi bi-file-text me-1"></i>Yazılarım
+                        <span class="badge bg-secondary ms-1" th:text="${#lists.size(posts)}"></span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#comments-tab">
+                        <i class="bi bi-chat me-1"></i>Şərhlər
+                        <span class="badge bg-secondary ms-1" th:text="${#lists.size(comments)}"></span>
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="posts-tab">
+                    <div th:if="${#lists.isEmpty(posts)}" class="text-center text-muted py-5">
+                        <i class="bi bi-journal-x fs-1"></i>
+                        <p class="mt-3">Hələ heç bir yazı paylaşmamısınız.</p>
+                        <a href="/web/posts/new" class="btn btn-primary btn-sm">Yazı yaz</a>
+                    </div>
+                    <div th:each="post : ${posts}" class="card mb-3 p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold mb-1">
+                                    <a th:href="@{/web/posts/{slug}(slug=${post.slug})}"
+                                       th:text="${post.title}"
+                                       class="text-decoration-none text-dark"></a>
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> <span th:text="${post.createdAt}"></span>
+                                    &nbsp;·&nbsp;
+                                    <i class="bi bi-eye"></i> <span th:text="${post.viewCount}"></span>
+                                    &nbsp;·&nbsp;
+                                    <i class="bi bi-hand-thumbs-up"></i> <span th:text="${post.likeCount}"></span>
+                                    &nbsp;·&nbsp;
+                                    <i class="bi bi-chat"></i> <span th:text="${post.commentCount}"></span>
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2 ms-3">
+                                <a th:href="@{/web/posts/{slug}(slug=${post.slug})}"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <form th:action="@{/web/posts/{slug}/delete(slug=${post.slug})}" method="post">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"
+                                            onclick="return confirm('Silmək istədiyinizdən əminsiniz?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="comments-tab">
+                    <div th:if="${#lists.isEmpty(comments)}" class="text-center text-muted py-5">
+                        <i class="bi bi-chat-x fs-1"></i>
+                        <p class="mt-3">Hələ heç bir şərh yazmamısınız.</p>
+                    </div>
+                    <div th:each="comment : ${comments}" class="card mb-3 p-3">
+                        <p class="mb-1" th:text="${comment.content}"></p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> <span th:text="${comment.createdAt}"></span>
+                            &nbsp;·&nbsp;
+                            <a th:href="@{/web/posts/__${comment.postId}__}"
+                               class="text-decoration-none text-muted">
+                                <i class="bi bi-arrow-right-circle"></i> Posta keç
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<div th:replace="~{fragments/footer :: scripts}"></div>
+</body>
+</html>

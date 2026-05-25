@@ -95,4 +95,9 @@ public class CommentService {
         comment.setDeleted(true);
         commentRepository.save(comment);
     }
+
+    public Page<CommentResponseDto> getByUserId(Long userId, Pageable pageable) {
+        return commentRepository.findAllByUserIdAndDeletedFalse(userId, pageable)
+                .map(commentMapper::toResponseDto);
+    }
 }
