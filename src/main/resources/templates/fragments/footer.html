@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<footer th:fragment="footer" class="mt-5 py-4 text-center">
-    <div class="container">
-        <p class="mb-0 text-muted">© 2026 <strong>Anonimly</strong> — Fikrini paylaş.</p>
+<footer th:fragment="footer" class="mt-5 py-4 border-top">
+    <!-- container yerinə container-fluid və padding istifadə etdik -->
+    <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
+        <p class="mb-0 text-muted">
+            © 2026 <strong>Anonimly</strong> — Fikrini paylaş.
+        </p>
+        <a href="/swagger-ui.html"
+           target="_blank"
+           style="text-decoration:none;">
+            Swagger
+        </a>
     </div>
 </footer>
 

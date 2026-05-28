@@ -4,32 +4,32 @@
 <body>
 <nav th:replace="~{fragments/header :: navbar}"></nav>
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card p-4 mt-5">
-                <h4 class="text-center fw-bold mb-4">Giriş</h4>
-
-                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-
-                <form th:action="@{/login}" method="post">
-                    <div class="mb-3">
-                        <label class="form-label">İstifadəçi adı</label>
-                        <input type="text" name="username" class="form-control" placeholder="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Şifrə</label>
-                        <input type="password" name="password" class="form-control" placeholder="••••••" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Daxil ol</button>
-                </form>
-                <p class="text-center mt-3 text-muted small">
-                    Hesabın yoxdur? <a href="/register">Qeydiyyat</a>
-                </p>
+<main class="wrapper">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card p-4 mt-5">
+                    <h4 class="text-center fw-bold mb-4">Giriş</h4>
+                    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+                    <form th:action="@{/login}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">İstifadəçi adı</label>
+                            <input type="text" name="username" class="form-control" placeholder="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Şifrə</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Daxil ol</button>
+                    </form>
+                    <p class="text-center mt-3 text-muted small">
+                        Hesabın yoxdur? <a href="/register">Qeydiyyat</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 <div th:replace="~{fragments/footer :: scripts}"></div>

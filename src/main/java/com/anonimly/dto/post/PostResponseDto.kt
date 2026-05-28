@@ -11,5 +11,7 @@ open class PostResponseDto @JvmOverloads constructor(
     open var likeCount: Long? = null,
     open var dislikeCount: Long? = null,
     open var commentCount: Long? = null,
-    open var createdAt: String? = null
+    open var createdAt: String? = null,
+    open var authorId: Long? = null
+
 )

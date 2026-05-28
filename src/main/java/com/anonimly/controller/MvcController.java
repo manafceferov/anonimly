@@ -12,6 +12,7 @@ import com.anonimly.dto.post.PostResponseDto;
 import com.anonimly.dto.user.UserEditDto;
 import com.anonimly.dto.user.UserRegisterDto;
 import com.anonimly.dto.user.UserResponseDto;
+import com.anonimly.enums.ReactionType;
 import com.anonimly.service.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.data.domain.Page;
@@ -31,21 +32,21 @@ public class MvcController {
     private final UserService userService;
     private final CommentService commentService;
     private final LikeService likeService;
-    private final CommentLikeService commentLikeService;
+    private final CommentReactionService commentReactionService;
 
     public MvcController(PostService postService,
                          AuthService authService,
                          UserService userService,
                          CommentService commentService,
                          LikeService likeService,
-                         CommentLikeService commentLikeService
+                         CommentReactionService commentReactionService
     ) {
         this.postService = postService;
         this.authService = authService;
         this.userService = userService;
         this.commentService = commentService;
         this.likeService = likeService;
-        this.commentLikeService = commentLikeService;
+        this.commentReactionService = commentReactionService;
     }
 
     @GetMapping("/")
@@ -79,12 +80,24 @@ public class MvcController {
     @GetMapping("/web/posts/{slug}")
     public String postDetail(@PathVariable String slug,
                              Model model,
-                             HttpSession session
-    ) {
-        PostDetailResponseDto post = postService.getBySlug(slug);
+                             HttpSession session) {
+
+        Long userId = (Long) session.getAttribute("userId");
+
+        PostDetailResponseDto post = postService.getBySlug(slug, userId);
+
         model.addAttribute("post", post);
-        model.addAttribute("comments", commentService.getByPost(post.getId(), PageRequest.of(0, 20)).getContent());
-        model.addAttribute("userId", session.getAttribute("userId"));
+        model.addAttribute("userId", userId);
+
+        model.addAttribute(
+                "comments",
+                commentService.getByPost(
+                        post.getId(),
+                        PageRequest.of(0, 50),
+                        userId
+                ).getContent()
+        );
+
         return "post-detail";
     }
 
@@ -120,7 +133,7 @@ public class MvcController {
         if (userId == null) {
             return "redirect:/login";
         }
-        PostDetailResponseDto post = postService.getBySlug(slug);
+        PostDetailResponseDto post = postService.getBySlug(slug, userId);
         PostEditDto dto = new PostEditDto();
         dto.setTitle(title);
         postService.edit(post.getId(), dto, userId);
@@ -133,7 +146,7 @@ public class MvcController {
     ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
-        PostDetailResponseDto post = postService.getBySlug(slug);
+        PostDetailResponseDto post = postService.getBySlug(slug, userId);
         postService.delete(post.getId(), userId);
         return "redirect:/web/profile";
     }
@@ -144,7 +157,7 @@ public class MvcController {
                        HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "LOGIN";
-        PostDetailResponseDto post = postService.getBySlug(slug);
+        PostDetailResponseDto post = postService.getBySlug(slug, userId);
         likeService.like(post.getId(), userId);
         return "OK";
     }
@@ -157,18 +170,21 @@ public class MvcController {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "LOGIN";
 
-        PostDetailResponseDto post = postService.getBySlug(slug);
+        PostDetailResponseDto post = postService.getBySlug(slug, userId);
         likeService.dislike(post.getId(), userId);
 
         return "OK";
     }
 
-    @PostMapping("/web/comments/{id}/like")
+    @PostMapping("/web/comments/{commentId}/react")
     @ResponseBody
-    public String likeComment(@PathVariable Long id, HttpSession session) {
+    public String reactComment(@PathVariable Long commentId,
+                               @RequestParam ReactionType type,
+                               HttpSession session
+    ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "LOGIN";
-        return commentLikeService.like(id, userId);
+        return commentReactionService.react(commentId, userId, type);
     }
 
     @PostMapping("/web/posts/{slug}/comment")
@@ -178,7 +194,7 @@ public class MvcController {
     ) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return "redirect:/login";
-        PostDetailResponseDto post = postService.getBySlug(slug);
+        PostDetailResponseDto post = postService.getBySlug(slug, userId);
         CommentCreateDto dto = new CommentCreateDto();
         dto.setContent(content);
         dto.setPostId(post.getId());

@@ -28,11 +28,11 @@ public class CommentController {
         return new ApiResponse<>(true, commentService.create(dto, userId), Messages.CREATED.name());
     }
 
-    @GetMapping("/post/{postId}")
-    public ApiResponse<Page<CommentResponseDto>> getByPost(@PathVariable Long postId,
-                                                           Pageable pageable) {
-        return new ApiResponse<>(true, commentService.getByPost(postId, pageable), Messages.SUCCESS.name());
-    }
+//    @GetMapping("/post/{postId}")
+//    public ApiResponse<Page<CommentResponseDto>> getByPost(@PathVariable Long postId,
+//                                                           Pageable pageable) {
+//        return new ApiResponse<>(true, commentService.getByPost(postId, pageable), Messages.SUCCESS.name());
+//    }
 
     @GetMapping("/{parentId}/replies")
     public ApiResponse<List<CommentResponseDto>> getReplies(@PathVariable Long parentId) {

@@ -12,5 +12,8 @@ open class PostDetailResponseDto @JvmOverloads constructor(
     open var likeCount: Long? = null,
     open var dislikeCount: Long? = null,
     open var createdAt: String? = null,
-    open var updatedAt: String? = null
+    open var updatedAt: String? = null,
+    open var likedByMe: Boolean? = false,
+    open var dislikedByMe: Boolean? = false,
+    open var authorId: Long? = null
 )

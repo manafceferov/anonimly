@@ -34,10 +34,10 @@ public class PostController {
         return new ApiResponse<>(true, postService.getAll(PageRequest.of(page, size)), Messages.SUCCESS.name());
     }
 
-    @GetMapping("/{slug}")
-    public ApiResponse<PostDetailResponseDto> getBySlug(@PathVariable String slug) {
-        return new ApiResponse<>(true, postService.getBySlug(slug), Messages.SUCCESS.name());
-    }
+//    @GetMapping("/{slug}")
+//    public ApiResponse<PostDetailResponseDto> getBySlug(@PathVariable String slug) {
+//        return new ApiResponse<>(true, postService.getBySlug(slug), Messages.SUCCESS.name());
+//    }
 
     @PutMapping("/{id}")
     public ApiResponse<PostResponseDto> edit(@PathVariable Long id,

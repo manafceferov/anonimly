@@ -1,55 +1,107 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/header :: head(${post.title})}"></head>
+
 <body>
+
 <nav th:replace="~{fragments/header :: navbar}"></nav>
 
-<div class="container">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card p-4 mb-4">
-                <h2 class="fw-bold mb-2" th:text="${post.title}"></h2>
-                <div class="text-muted small mb-4">
-                    <i class="bi bi-person"></i> <span th:text="${post.authorUsername}"></span>
-                    &nbsp;·&nbsp;
-                    <i class="bi bi-clock"></i> <span th:text="${post.createdAt}"></span>
-                    &nbsp;·&nbsp;
-                    <i class="bi bi-eye"></i> <span th:text="${post.viewCount}"></span> baxış
-                </div>
-                <div th:text="${post.content}" class="lh-lg"></div>
-                <div class="mt-4 d-flex gap-3">
-                    <a th:href="@{/web/posts/{slug}/like(slug=${post.slug})}" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-hand-thumbs-up"></i> <span th:text="${post.likeCount}">0</span>
-                    </a>
-                    <a th:href="@{/web/posts/{slug}/dislike(slug=${post.slug})}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-hand-thumbs-down"></i> <span th:text="${post.dislikeCount}">0</span>
-                    </a>
-                </div>
-            </div>
-            <div class="card p-4 mb-4">
-                <h5 class="fw-bold mb-4">Şərhlər</h5>
-                <div th:if="${#lists.isEmpty(comments)}" class="text-muted">
-                    Hələ şərh yoxdur. İlk şərhi sən yaz!
-                </div>
-                <div th:each="comment : ${comments}" class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex justify-content-between">
-                        <strong th:text="${comment.authorUsername}"></strong>
-                        <small class="text-muted" th:text="${comment.createdAt}"></small>
+<main class="wrapper">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card p-4 mb-4">
+                    <h2 class="fw-bold" th:text="${post.title}"></h2>
+                    <div class="text-muted small mb-3">
+                        <span th:text="${post.authorUsername}"></span>
+                        · <span th:text="${post.createdAt}"></span>
+                        · 👁 <span th:text="${post.viewCount}"></span>
                     </div>
-                    <p class="mb-0 mt-1" th:text="${comment.content}"></p>
-                </div>
-                <form th:action="@{/web/posts/{slug}/comment(slug=${post.slug})}" method="post" class="mt-4">
-                    <div class="mb-3">
-                        <textarea name="content" class="form-control" rows="3" placeholder="Şərhinizi yazın..."></textarea>
+                    <div th:text="${post.content}" class="lh-lg"></div>
+                    <div class="mt-3 d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-danger"
+                                th:attr="data-slug=${post.slug}"
+                                onclick="react(this,'LIKE')">
+                            👍 <span th:text="${post.likeCount}">0</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-dark"
+                                th:attr="data-slug=${post.slug}"
+                                onclick="react(this,'DISLIKE')">
+                            👎 <span th:text="${post.dislikeCount}">0</span>
+                        </button>
                     </div>
-                    <button type="submit" class="btn btn-primary">Göndər</button>
-                </form>
+                </div>
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Comments</h5>
+                    <div th:if="${#lists.isEmpty(comments)}" class="text-muted">No comments yet</div>
+
+                    <div th:each="comment : ${comments}" class="mb-4 border rounded p-3">
+                        <div>
+                            <strong th:text="${comment.authorUsername}"></strong>
+                            <p th:text="${comment.content}" class="mb-2"></p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        th:attr="data-id=${comment.id}"
+                                        onclick="reactComment(this,'LIKE')">
+                                    👍 <span th:text="${comment.likeCount}">0</span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-dark"
+                                        th:attr="data-id=${comment.id}"
+                                        onclick="reactComment(this,'DISLIKE')">
+                                    👎 <span th:text="${comment.likeCount}">0</span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        th:attr="onclick=|toggleReply(${comment.id})|">
+                                    Reply
+                                </button>
+                            </div>
+                            <div th:id="'reply-' + ${comment.id}" style="display:none" class="mt-2 ms-3">
+                                <form th:action="@{/web/posts/{slug}/comment(slug=${post.slug})}" method="post">
+                                    <input type="hidden" name="parentId" th:value="${comment.id}"/>
+                                    <textarea name="content" class="form-control mb-2" rows="2" placeholder="Write reply..."></textarea>
+                                    <button class="btn btn-sm btn-primary">Send</button>
+                                </form>
+                            </div>
+                            <div class="ms-4 mt-3 border-start ps-3">
+                                <div th:each="reply : ${comment.replies}" class="mb-2">
+                                    <strong th:text="${reply.authorUsername}"></strong>
+                                    <p th:text="${reply.content}" class="mb-1"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <form th:action="@{/web/posts/{slug}/comment(slug=${post.slug})}" method="post" class="mt-4">
+                        <textarea name="content" class="form-control mb-2" rows="3" placeholder="Write comment..."></textarea>
+                        <button class="btn btn-primary">Send</button>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
-</div>
+</main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 <div th:replace="~{fragments/footer :: scripts}"></div>
+
+<script>
+    function toggleReply(id){
+        const el = document.getElementById("reply-" + id);
+        el.style.display = (el.style.display === "block") ? "none" : "block";
+    }
+
+    async function react(btn,type){
+        const slug = btn.getAttribute("data-slug");
+        const res = await fetch(`/web/posts/${slug}/react?type=${type}`, { method:"POST" });
+        if(await res.text()==="LOGIN"){ location.href="/login"; } else { location.reload(); }
+    }
+
+    async function reactComment(btn,type){
+        const id = btn.getAttribute("data-id");
+        const res = await fetch(`/web/comments/${id}/react?type=${type}`, { method:"POST" });
+        if(await res.text()==="LOGIN"){ location.href="/login"; } else { location.reload(); }
+    }
+</script>
+
 </body>
 </html>

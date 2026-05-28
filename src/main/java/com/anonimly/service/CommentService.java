@@ -24,16 +24,19 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+    private final CommentReactionService commentReactionService;
 
     public CommentService(CommentRepository commentRepository,
                           PostRepository postRepository,
                           UserRepository userRepository,
-                          CommentMapper commentMapper
+                          CommentMapper commentMapper,
+                          CommentReactionService commentReactionService
     ) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.commentMapper = commentMapper;
+        this.commentReactionService = commentReactionService;
     }
 
     @Transactional
@@ -58,9 +61,46 @@ public class CommentService {
         return commentMapper.toResponseDto(commentRepository.save(comment));
     }
 
-    public Page<CommentResponseDto> getByPost(Long postId, Pageable pageable) {
-        return commentRepository.findAllByPostIdAndParentIsNullAndDeletedFalse(postId, pageable)
-                .map(commentMapper::toResponseDto);
+    public Page<CommentResponseDto> getByPost(Long postId, Pageable pageable, Long userId) {
+
+        return commentRepository
+                .findAllByPostIdAndParentIsNullAndDeletedFalse(postId, pageable)
+                .map(comment -> mapTree(comment, userId));
+    }
+
+    private CommentResponseDto mapTree(Comment comment, Long userId) {
+
+        CommentResponseDto dto = commentMapper.toResponseDto(comment);
+
+        dto.setLikeCount(commentReactionService.getLikes(comment.getId()));
+        dto.setDislikeCount(commentReactionService.getDislikes(comment.getId()));
+
+        if (userId != null) {
+            dto.setLikedByMe(
+                    commentReactionService.getLikes(comment.getId()) > 0
+            );
+        }
+
+        List<CommentResponseDto> replies = comment.getReplies()
+                .stream()
+                .filter(r -> !r.getDeleted())
+                .map(r -> mapTree(r, userId))
+                .toList();
+
+        dto.setReplies(replies);
+
+        return dto;
+    }
+
+    private CommentResponseDto mapWithReplies(Comment comment) {
+        CommentResponseDto dto = commentMapper.toResponseDto(comment);
+        List<CommentResponseDto> replies = commentRepository
+                .findAllByParentIdAndDeletedFalse(comment.getId())
+                .stream()
+                .map(commentMapper::toResponseDto)
+                .toList();
+        dto.setReplies(replies);
+        return dto;
     }
 
     public List<CommentResponseDto> getReplies(Long parentId) {

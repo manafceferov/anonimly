@@ -69,13 +69,13 @@ public class PostService {
     }
 
     @Transactional
-    public PostDetailResponseDto getBySlug(String slug) {
+    public PostDetailResponseDto getBySlug(String slug, Long userId) {
         Post post = postRepository.findBySlugAndDeletedFalse(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Post tapılmadı"));
         post.setViewCount(post.getViewCount() + 1);
         postRepository.save(post);
         PostDetailResponseDto dto = postMapper.toDetailResponseDto(post);
-        enrichDetailWithLikes(dto);
+        enrichDetailWithLikes(dto, userId);
         return dto;
     }
 
@@ -138,9 +138,14 @@ public class PostService {
         dto.setDislikeCount(likeService.getDislikeCount(dto.getId()));
     }
 
-    private void enrichDetailWithLikes(PostDetailResponseDto dto) {
+    private void enrichDetailWithLikes(PostDetailResponseDto dto, Long userId) {
         dto.setLikeCount(likeService.getLikeCount(dto.getId()));
         dto.setDislikeCount(likeService.getDislikeCount(dto.getId()));
+        if (userId != null) {
+            String reaction = likeService.getUserReaction(dto.getId(), userId);
+            dto.setLikedByMe("LIKE".equals(reaction));
+            dto.setDislikedByMe("DISLIKE".equals(reaction));
+        }
     }
 
     private String generateSlug(String title) {
